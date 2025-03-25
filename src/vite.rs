@@ -39,7 +39,7 @@ pub struct Development {
     port: u16,
     main: &'static str,
     lang: &'static str,
-    title: &'static str,
+    title: Option<&'static str>,
     react: bool,
     https: bool,
 }
@@ -51,7 +51,7 @@ impl Default for Development {
             port: 5173,
             main: "src/main.ts",
             lang: "en",
-            title: "Vite",
+            title: None,
             react: false,
             https: false,
         }
@@ -89,7 +89,7 @@ impl Development {
     }
 
     pub fn title(mut self, title: &'static str) -> Self {
-        self.title = title;
+        self.title = Some(title);
         self
     }
 
@@ -127,7 +127,9 @@ impl Development {
                 (DOCTYPE)
                 html lang=(self.lang) {
                     head {
-                        title { (self.title) }
+                        @if let Some(title) = self.title {
+                            title { (title) }
+                        }
                         meta charset="utf-8";
                         meta name="viewport" content="width=device-width, initial-scale=1.0";
                         @if let Some(preamble_code) = preamble_code {
@@ -166,7 +168,7 @@ window.__vite_plugin_react_preamble_installed__ = true
 pub struct Production {
     main: ManifestEntry,
     css: Option<String>,
-    title: &'static str,
+    title: Option<&'static str>,
     lang: &'static str,
     /// SHA1 hash of the contents of the manifest file.
     version: String,
@@ -207,7 +209,7 @@ impl Production {
         Ok(Self {
             main: entry,
             css,
-            title: "Vite",
+            title: None,
             lang: "en",
             version,
         })
@@ -219,7 +221,7 @@ impl Production {
     }
 
     pub fn title(mut self, title: &'static str) -> Self {
-        self.title = title;
+        self.title = Some(title);
         self
     }
 
@@ -233,7 +235,9 @@ impl Production {
                 (DOCTYPE)
                 html lang=(self.lang) {
                     head {
-                        title { (self.title) }
+                        @if let Some(title) = self.title {
+                            title { (title) }
+                        }
                         meta charset="utf-8";
                         meta name="viewport" content="width=device-width, initial-scale=1.0";
                         @if let Some(integrity) = main_integrity {
@@ -297,7 +301,7 @@ mod tests {
         assert_eq!(development.port, 5173);
         assert_eq!(development.main, "src/main.ts");
         assert_eq!(development.lang, "en");
-        assert_eq!(development.title, "Vite");
+        assert_eq!(development.title, None);
         assert!(!development.react);
     }
 
@@ -313,7 +317,7 @@ mod tests {
         assert_eq!(development.port, 8080);
         assert_eq!(development.main, "src/deep/index.ts");
         assert_eq!(development.lang, "id");
-        assert_eq!(development.title, "Untitled Axum Inertia App");
+        assert_eq!(development.title, Some("Untitled Axum Inertia App"));
         assert!(development.react);
     }
 
@@ -382,7 +386,7 @@ mod tests {
         let content_hash = encode(Sha1::digest(manifest_content.as_bytes()));
 
         assert_eq!(production.main.css, Some(vec!(String::from("style.css"))));
-        assert_eq!(production.title, "Vite");
+        assert_eq!(production.title, None);
         assert_eq!(production.main.file, "main.hash-id-here.js");
         assert_eq!(production.main.integrity, None);
         assert_eq!(production.lang, "en");
@@ -399,7 +403,7 @@ mod tests {
             .title("Untitled Axum Inertia App");
 
         assert_eq!(production.lang, "fr");
-        assert_eq!(production.title, "Untitled Axum Inertia App");
+        assert_eq!(production.title, Some("Untitled Axum Inertia App"));
     }
 
     #[test]
